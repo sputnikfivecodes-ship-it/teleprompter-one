@@ -9,8 +9,6 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-user-select: none; /* para iPad antigo */
-            user-select: none;
         }
 
         body {
@@ -67,6 +65,8 @@
             font-family: inherit;
             resize: vertical;
             height: 250px;
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         .stats {
@@ -249,9 +249,8 @@
 </div>
 
 <script>
-    // ========== CÓDIGO COMPATÍVEL COM IPAD 1 (ES5, sem requestAnimationFrame) ==========
+    // ========== CÓDIGO COMPATÍVEL COM IPAD ANTIGO ==========
     
-    // Elementos DOM
     var editorScreen = document.getElementById('editorScreen');
     var prompterScreen = document.getElementById('prompterScreen');
     var scriptInput = document.getElementById('scriptInput');
@@ -266,27 +265,22 @@
     var prompterTextDiv = document.getElementById('prompterText');
     var scrollArea = document.getElementById('scrollArea');
     
-    // Estatísticas
     var charCountSpan = document.getElementById('charCount');
     var wordCountSpan = document.getElementById('wordCount');
     var timeEstSpan = document.getElementById('timeEst');
     
-    // Estado
     var currentText = "";
     var scrollSpeed = 10;
     var isMirrored = false;
     var isScrolling = false;
-    var scrollIntervalId = null;      // usado no fallback com setTimeout
-    var rafId = null;                 // para requestAnimationFrame, se existir
+    var scrollIntervalId = null;
     var lastTimestamp = 0;
     var pixelsPerSecond = 120;
     
-    // Função para atualizar pixels por segundo
     function updatePixelsPerSecond() {
         pixelsPerSecond = 20 + (scrollSpeed - 1) * 20;
     }
     
-    // Salvar configurações no localStorage
     function saveAll() {
         try {
             localStorage.setItem('prompterText', currentText);
@@ -295,7 +289,6 @@
         } catch(e) {}
     }
     
-    // Carregar configurações
     function loadAll() {
         try {
             if(localStorage.getItem('prompterText')) {
@@ -342,7 +335,6 @@
         timeEstSpan.innerText = estMinutes + " min";
     }
     
-    // Escapa HTML básico
     function escapeHtml(str) {
         return str.replace(/[&<>]/g, function(m) {
             if(m === '&') return '&amp;';
@@ -352,7 +344,6 @@
         });
     }
     
-    // Constrói o conteúdo do prompter com espaçador (texto começa no rodapé)
     function buildPrompterContent() {
         var viewportHeight = window.innerHeight;
         var spacerHtml = '<div style="height: ' + viewportHeight + 'px; width: 1px;"></div>';
@@ -371,16 +362,12 @@
         scrollArea.scrollTop = 0;
     }
     
-    // ========== ROLAGEM: FALLBACK PARA iPAD 1 (sem requestAnimationFrame) ==========
-    // Detecta se requestAnimationFrame existe, senão usa setTimeout
-    var useRequestAnimationFrame = (typeof window.requestAnimationFrame === 'function');
-    
     function scrollStep() {
         if(!isScrolling) return;
         
         var now = Date.now();
         var delta = (now - lastTimestamp) / 1000;
-        if(delta > 0.1) delta = 0.1; // limitar
+        if(delta > 0.1) delta = 0.1;
         lastTimestamp = now;
         var move = pixelsPerSecond * delta;
         if(move < 0.5) move = 0.5;
@@ -394,12 +381,7 @@
             return;
         }
         
-        if(useRequestAnimationFrame) {
-            rafId = window.requestAnimationFrame(scrollStep);
-        } else {
-            // Fallback: setTimeout com intervalo fixo de 30ms (aprox. 33 fps)
-            scrollIntervalId = setTimeout(scrollStep, 30);
-        }
+        scrollIntervalId = setTimeout(scrollStep, 30);
     }
     
     function startScrolling() {
@@ -407,24 +389,13 @@
         isScrolling = true;
         playPauseBtn.innerText = '⏸️ PAUSAR';
         lastTimestamp = Date.now();
-        if(useRequestAnimationFrame) {
-            rafId = window.requestAnimationFrame(scrollStep);
-        } else {
-            scrollIntervalId = setTimeout(scrollStep, 30);
-        }
+        scrollIntervalId = setTimeout(scrollStep, 30);
     }
     
     function stopScrolling() {
-        if(useRequestAnimationFrame) {
-            if(rafId) {
-                window.cancelAnimationFrame(rafId);
-                rafId = null;
-            }
-        } else {
-            if(scrollIntervalId) {
-                clearTimeout(scrollIntervalId);
-                scrollIntervalId = null;
-            }
+        if(scrollIntervalId) {
+            clearTimeout(scrollIntervalId);
+            scrollIntervalId = null;
         }
         isScrolling = false;
         playPauseBtn.innerText = '▶️ INICIAR';
@@ -442,7 +413,6 @@
         if(wasScrolling) startScrolling();
     }
     
-    // ========== CONTROLES ==========
     function changeSpeed(delta) {
         var newSpeed = scrollSpeed + delta;
         if(newSpeed < 1) newSpeed = 1;
@@ -487,7 +457,6 @@
         scrollArea.scrollTop = 0;
     }
     
-    // ========== EVENTOS (compatíveis) ==========
     scriptInput.addEventListener('input', function() {
         currentText = scriptInput.value;
         updateStats();
@@ -502,7 +471,6 @@
     speedUp.addEventListener('click', function() { changeSpeed(1); });
     mirrorToggleBtn.addEventListener('click', toggleMirror);
     
-    // Reconstruir espaçador ao girar a tela
     window.addEventListener('resize', function() {
         if(prompterScreen.style.display === 'flex') {
             var oldScroll = scrollArea.scrollTop;
@@ -511,7 +479,6 @@
         }
     });
     
-    // Inicialização
     loadAll();
     updateStats();
 </script>
